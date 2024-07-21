@@ -4,9 +4,12 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.StrUtil;
 import com.ioomex.code_sandbox.app.costant.FileConstant;
+import com.ioomex.code_sandbox.app.costant.MagicConstant;
 import com.ioomex.code_sandbox.app.model.po.ExecuteCodeRequest;
 import com.ioomex.code_sandbox.app.model.po.ExecuteCodeResponse;
+import com.ioomex.code_sandbox.app.model.po.ProcessResult;
 import com.ioomex.code_sandbox.app.service.CodeSandbox;
+import com.ioomex.code_sandbox.app.utils.ProcessUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -15,7 +18,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -51,6 +56,12 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
         return env + File.separator + FileConstant.CODE;
     }
 
+    private static void runResult(ProcessResult result) {
+        log.info("运行结果  {}", result.getMessage());
+        ;
+    }
+
+
     /**
      * 释放临时资源
      */
@@ -61,6 +72,7 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 
     @Override
     public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
+        ExecuteCodeResponse executeCodeResponse=new ExecuteCodeResponse();
         // 代码路径
         String codePath = getCodePath();
 
@@ -72,67 +84,42 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
         // TODO: 1. 生成的路径之后，根据用户的代码去将代码写入到文件
         File finalFile = FileUtil.writeString(executeCodeRequest.getCode(), fileName, StandardCharsets.UTF_8);
 
-
         // TODO: 2. 编译对应的文件
-        String compileCmd = String.format(FileConstant.COMPILE_COMMAND, finalFile.getAbsoluteFile());
-
-        // 编译代码
-        compile_code(compileCmd);
-        String runCodeCmd = FileConstant.RUN_COMMAND;
-        List<String> inputList = executeCodeRequest.getInputList();
-        for (String s : inputList) {
-            String finalRunCmd = String.format(runCodeCmd, userCodePath, s);
-            compile_code(finalRunCmd);
-        }
-        return null;
-    }
-
-    private static void compile_code(String compileCmd) {
         try {
-            // ProcessBuilder.start() 和 Runtime.exec 方法创建一个本机进程，并返回 Process 子类的一个实例，该实例可用来控制进程并获取相关信息。
+            String compileCmd = String.format(FileConstant.COMPILE_COMMAND, finalFile.getAbsoluteFile());
+
             Process compileProcess = Runtime.getRuntime().exec(compileCmd);
-            int compileResult = compileProcess.waitFor();
 
-
-            // 进程
-            if (compileResult == 0) {
-                log.info("编译成功 ");
-                StringBuilder successLog = new StringBuilder();
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(compileProcess.getInputStream()));
-
-                String line;
-                while ((line = bufferedReader.readLine()) != null) {
-                    successLog.append(line).append("\n");
-                    System.out.println(line);
-                }
-
-                if (StrUtil.isNotEmpty(successLog)) {
-                    log.error("成功日志  {}", successLog);
-                }
-            } else {
-                log.error("编译失败 ");
-                StringBuilder errorLog = new StringBuilder();
-                BufferedReader errorBufferedReader = new BufferedReader(new InputStreamReader(compileProcess.getErrorStream()));
-
-                String line;
-                while ((line = errorBufferedReader.readLine()) != null) {
-                    errorLog.append(line).append("\n");
-                    System.out.println(line);
-                }
-                log.error("错误日志  {}", errorLog);
-            }
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+            ProcessResult processResult = ProcessUtil.processRunOrCompile(compileProcess, MagicConstant.COMPILE);
+            runResult(processResult);
+        } catch (Exception e) {
+            log.error("编译过程中出现异常", e);
         }
 
 
+        // TODO: 3. 运行对应的文件
+        try {
+            List<String> inputList = executeCodeRequest.getInputList();
+            for (String s : inputList) {
+                String finalRunCmd = String.format(FileConstant.RUN_COMMAND, userCodePath, s);
+                Process runProcess = Runtime.getRuntime().exec(finalRunCmd);
+                ProcessResult processResult = ProcessUtil.processRunOrCompile(runProcess, MagicConstant.RUN);
+                runResult(processResult);
+            }
+        } catch (Exception e) {
+            log.error("运行过程中出现异常", e);
+        }
+
+
+
+        return executeCodeResponse;
     }
 
 
     public static void main(String[] args) {
         JavaNativeCodeSandBox javaNativeCodeSandBox = new JavaNativeCodeSandBox();
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
-        executeCodeRequest.setInputList(Collections.singletonList("1 2"));
+        executeCodeRequest.setInputList(Arrays.asList("1 2", "3 4"));
         executeCodeRequest.setCode(getTestCode());
         executeCodeRequest.setLanguage("java");
         javaNativeCodeSandBox.executeCode(executeCodeRequest);
