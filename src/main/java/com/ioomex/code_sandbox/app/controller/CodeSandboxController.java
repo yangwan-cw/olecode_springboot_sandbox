@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class CodeSandboxController {
 
     // http://127.0.0.1:8080/hello?name=lisi
+    // 测试
     @RequestMapping("/hello")
     @ResponseBody
     public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
