@@ -7,6 +7,7 @@ import com.ioomex.code_sandbox.app.costant.FileConstant;
 import com.ioomex.code_sandbox.app.costant.MagicConstant;
 import com.ioomex.code_sandbox.app.model.po.ExecuteCodeRequest;
 import com.ioomex.code_sandbox.app.model.po.ExecuteCodeResponse;
+import com.ioomex.code_sandbox.app.model.po.JudgeInfo;
 import com.ioomex.code_sandbox.app.model.po.ProcessResult;
 import com.ioomex.code_sandbox.app.service.CodeSandbox;
 import com.ioomex.code_sandbox.app.utils.ProcessUtil;
@@ -14,14 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -66,13 +63,18 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
      * 释放临时资源
      */
     private static void delTemporarilyFile(String userCodePath) {
-        FileUtil.del(userCodePath);
+        boolean del = FileUtil.del(userCodePath);
+        if (del) {
+            log.info("删除成功");
+        } else {
+            log.error("删除失败");
+        }
     }
 
 
     @Override
     public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
-        ExecuteCodeResponse executeCodeResponse=new ExecuteCodeResponse();
+        ExecuteCodeResponse executeCodeResponse = new ExecuteCodeResponse();
         // 代码路径
         String codePath = getCodePath();
 
@@ -94,9 +96,13 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
             runResult(processResult);
         } catch (Exception e) {
             log.error("编译过程中出现异常", e);
+            return getResponse(e);
+
         }
 
 
+        List<ProcessResult> processResults = new ArrayList<>();
+        Long maxTime = 0L;
         // TODO: 3. 运行对应的文件
         try {
             List<String> inputList = executeCodeRequest.getInputList();
@@ -104,13 +110,43 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
                 String finalRunCmd = String.format(FileConstant.RUN_COMMAND, userCodePath, s);
                 Process runProcess = Runtime.getRuntime().exec(finalRunCmd);
                 ProcessResult processResult = ProcessUtil.processRunOrCompile(runProcess, MagicConstant.RUN);
+//                ProcessResult processResult = ProcessUtil.runInteractProcessAndGetMessage(runProcess,s);
                 runResult(processResult);
+                processResults.add(processResult);
             }
         } catch (Exception e) {
             log.error("运行过程中出现异常", e);
+            return getResponse(e);
+
         }
 
+        List<String> outputList = new ArrayList<>();
+        for (ProcessResult processResult : processResults) {
+            String errorMessage = processResult.getErrorMessage();
+            if (StrUtil.isNotEmpty(errorMessage)) {
+                executeCodeResponse.setMessage(errorMessage);
+                executeCodeResponse.setStatus(3);
+                break;
+            }
+            outputList.add(errorMessage);
+            Long time = processResult.getTime();
+            if (time != null) {
+                maxTime = Math.max(maxTime, time);
+            }
+        }
 
+        if (outputList.size() == processResults.size()) {
+            executeCodeResponse.setStatus(1);
+        }
+        executeCodeResponse.setOutputList(outputList);
+        JudgeInfo judgeInfo = new JudgeInfo();
+        judgeInfo.setTime(maxTime);
+//        judgeInfo.setMemory();
+        executeCodeResponse.setJudgeInfo(judgeInfo);
+
+        if (finalFile.getParentFile() != null) {
+            delTemporarilyFile(fileName);
+        }
 
         return executeCodeResponse;
     }
@@ -119,7 +155,7 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
     public static void main(String[] args) {
         JavaNativeCodeSandBox javaNativeCodeSandBox = new JavaNativeCodeSandBox();
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
-        executeCodeRequest.setInputList(Arrays.asList("1 2", "3 4"));
+        executeCodeRequest.setInputList(Arrays.asList("10 2", "3 4"));
         executeCodeRequest.setCode(getTestCode());
         executeCodeRequest.setLanguage("java");
         javaNativeCodeSandBox.executeCode(executeCodeRequest);
@@ -133,5 +169,14 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
      */
     private static String getTestCode() {
         return ResourceUtil.readStr("code/Main.java", StandardCharsets.UTF_8);
+    }
+
+    private ExecuteCodeResponse getResponse(Throwable a) {
+        ExecuteCodeResponse executeCodeResponse = new ExecuteCodeResponse();
+        executeCodeResponse.setOutputList(new ArrayList<>());
+        executeCodeResponse.setStatus(2);
+        executeCodeResponse.setJudgeInfo(new JudgeInfo());
+        executeCodeResponse.setMessage(a.getMessage());
+        return executeCodeResponse;
     }
 }

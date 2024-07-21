@@ -1,13 +1,13 @@
 package com.ioomex.code_sandbox.app.utils;
 
 
-
+import cn.hutool.core.util.StrUtil;
 import com.ioomex.code_sandbox.app.model.po.ProcessResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import org.springframework.util.StopWatch;
+
+import java.io.*;
 
 public class ProcessUtil {
 
@@ -25,6 +25,8 @@ public class ProcessUtil {
     public static ProcessResult processRunOrCompile(Process process, String runOrCompileName) {
         ProcessResult processResult = new ProcessResult();
         try {
+            StopWatch stopWatch=new StopWatch();
+            stopWatch.start();
             int exitCode = process.waitFor();
             processResult.setRunCode(exitCode);
             if (exitCode == 0) {
@@ -36,6 +38,8 @@ public class ProcessUtil {
                 String errorLog = readStream(process.getErrorStream());
                 processResult.setMessage(errorLog);
             }
+            stopWatch.stop();
+            processResult.setTime(stopWatch.getLastTaskTimeMillis());
         } catch (IOException | InterruptedException e) {
             log.error("执行 {} 进程时发生异常", runOrCompileName, e);
             throw new RuntimeException("执行进程时发生异常", e);
@@ -77,5 +81,38 @@ public class ProcessUtil {
             log.error("关闭进程流时发生异常", e);
         }
     }
+
+
+    public static ProcessResult runInteractProcessAndGetMessage(Process runProcess, String args) {
+        ProcessResult executeMessage = new ProcessResult();
+
+        try {
+            // 向控制台输入程序
+            OutputStream outputStream = runProcess.getOutputStream();
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
+            String[] s = args.split(" ");
+            String join = String.join("\n", s) + "\n"; // 确保每个输入项都以新行结束
+            outputStreamWriter.write(join);
+            // 相当于按了回车，执行输入的信息
+            outputStreamWriter.flush();
+
+            // 分批获取进程的正常输出
+            InputStream inputStream = runProcess.getInputStream();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder compileOutputStringBuilder = new StringBuilder();
+
+            // 逐行读取
+            String compileOutputLine;
+            while ((compileOutputLine = bufferedReader.readLine()) != null) {
+                compileOutputStringBuilder.append(compileOutputLine).append("\n");
+            }
+            executeMessage.setMessage(compileOutputStringBuilder.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return executeMessage;
+    }
+
 
 }
