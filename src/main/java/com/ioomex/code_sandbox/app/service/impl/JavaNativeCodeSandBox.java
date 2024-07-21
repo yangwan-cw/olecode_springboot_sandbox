@@ -43,7 +43,7 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 
 
         // TODO: 2. 编译对应的文件
-        String compileCmd = String.format("javac -encoding utf-8 %s", finalFile.getAbsoluteFile());
+        String compileCmd = String.format(FileConstant.COMPILE_COMMAND, finalFile.getAbsoluteFile());
 
         try {
             Process compileProcess = Runtime.getRuntime().exec(compileCmd);
@@ -51,20 +51,17 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 
             if (compileResult == 0) {
                 System.out.print("编译成功");
-                BufferedReader bufferedReader =
-                  new BufferedReader(new InputStreamReader(compileProcess.getInputStream()));
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(compileProcess.getInputStream()));
 
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
                     System.out.println(line);
                 }
 
-
             } else {
                 System.out.print("编译失败");
 
-                BufferedReader errorBufferedReader =
-                  new BufferedReader(new InputStreamReader(compileProcess.getErrorStream()));
+                BufferedReader errorBufferedReader = new BufferedReader(new InputStreamReader(compileProcess.getErrorStream()));
 
                 String line;
                 while ((line = errorBufferedReader.readLine()) != null) {
@@ -77,10 +74,22 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
         }
 
         // 生成文件之后
-//        FileUtil.del(userCodePath);
+//
         return null;
     }
 
+
+    /**
+     * 释放临时资源
+     */
+    private static void delTemporarilyFile(String userCodePath) {
+        FileUtil.del(userCodePath);
+    }
+
+
+    /**
+     * 如果目录不存在那么就创建临时资源
+     */
     private static void file() {
         String codePath = getCodePath();
         if (!FileUtil.exist(codePath)) {
@@ -99,6 +108,9 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
         return env + File.separator + FileConstant.CODE;
     }
 
+
+
+
     public static void main(String[] args) {
         JavaNativeCodeSandBox javaNativeCodeSandBox = new JavaNativeCodeSandBox();
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
@@ -109,7 +121,11 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
     }
 
 
+    /**
+     * 获取测试代码，用于方便调试
+     * @return 返回
+     */
     private static String getTestCode() {
-        return ResourceUtil.readStr("code/test.java", StandardCharsets.UTF_8);
+        return ResourceUtil.readStr("code/Main.java", StandardCharsets.UTF_8);
     }
 }
