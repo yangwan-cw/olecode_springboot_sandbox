@@ -19,7 +19,7 @@ public interface FileConstant {
 
     String COMPILE_COMMAND = "javac -encoding utf-8 %s";
 
-    String RUN_COMMAND = "";
+    String RUN_COMMAND = "java -cp %s Main %s";
 
 
 }

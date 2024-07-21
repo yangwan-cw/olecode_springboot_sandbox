@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -75,6 +76,18 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
         // TODO: 2. 编译对应的文件
         String compileCmd = String.format(FileConstant.COMPILE_COMMAND, finalFile.getAbsoluteFile());
 
+        // 编译代码
+        compile_code(compileCmd);
+        String runCodeCmd = FileConstant.RUN_COMMAND;
+        List<String> inputList = executeCodeRequest.getInputList();
+        for (String s : inputList) {
+            String finalRunCmd = String.format(runCodeCmd, userCodePath, s);
+            compile_code(finalRunCmd);
+        }
+        return null;
+    }
+
+    private static void compile_code(String compileCmd) {
         try {
             // ProcessBuilder.start() 和 Runtime.exec 方法创建一个本机进程，并返回 Process 子类的一个实例，该实例可用来控制进程并获取相关信息。
             Process compileProcess = Runtime.getRuntime().exec(compileCmd);
@@ -113,7 +126,6 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
         }
 
 
-        return null;
     }
 
 
