@@ -2,6 +2,7 @@ package com.ioomex.code_sandbox.app.service.impl;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
+import cn.hutool.core.util.StrUtil;
 import com.ioomex.code_sandbox.app.costant.FileConstant;
 import com.ioomex.code_sandbox.app.model.po.ExecuteCodeRequest;
 import com.ioomex.code_sandbox.app.model.po.ExecuteCodeResponse;
@@ -28,65 +29,6 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
         file();
     }
 
-    @Override
-    public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
-        // 代码路径
-        String codePath = getCodePath();
-
-        // 为每个请求创建对应的文件夹
-        String userCodePath = codePath + File.separator + UUID.randomUUID();
-
-        // 文件名
-        String fileName = userCodePath + File.separator + FileConstant.MAIN_FILE_NAME;
-        // TODO: 1. 生成的路径之后，根据用户的代码去将代码写入到文件
-        File finalFile = FileUtil.writeString(executeCodeRequest.getCode(), fileName, StandardCharsets.UTF_8);
-
-
-        // TODO: 2. 编译对应的文件
-        String compileCmd = String.format(FileConstant.COMPILE_COMMAND, finalFile.getAbsoluteFile());
-
-        try {
-            Process compileProcess = Runtime.getRuntime().exec(compileCmd);
-            int compileResult = compileProcess.waitFor();
-
-            if (compileResult == 0) {
-                System.out.print("编译成功");
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(compileProcess.getInputStream()));
-
-                String line;
-                while ((line = bufferedReader.readLine()) != null) {
-                    System.out.println(line);
-                }
-
-            } else {
-                System.out.print("编译失败");
-
-                BufferedReader errorBufferedReader = new BufferedReader(new InputStreamReader(compileProcess.getErrorStream()));
-
-                String line;
-                while ((line = errorBufferedReader.readLine()) != null) {
-                    System.out.println(line);
-                }
-
-            }
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        // 生成文件之后
-//
-        return null;
-    }
-
-
-    /**
-     * 释放临时资源
-     */
-    private static void delTemporarilyFile(String userCodePath) {
-        FileUtil.del(userCodePath);
-    }
-
-
     /**
      * 如果目录不存在那么就创建临时资源
      */
@@ -108,7 +50,71 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
         return env + File.separator + FileConstant.CODE;
     }
 
+    /**
+     * 释放临时资源
+     */
+    private static void delTemporarilyFile(String userCodePath) {
+        FileUtil.del(userCodePath);
+    }
 
+
+    @Override
+    public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
+        // 代码路径
+        String codePath = getCodePath();
+
+        // 为每个请求创建对应的文件夹
+        String userCodePath = codePath + File.separator + UUID.randomUUID();
+
+        // 文件名
+        String fileName = userCodePath + File.separator + FileConstant.MAIN_FILE_NAME;
+        // TODO: 1. 生成的路径之后，根据用户的代码去将代码写入到文件
+        File finalFile = FileUtil.writeString(executeCodeRequest.getCode(), fileName, StandardCharsets.UTF_8);
+
+
+        // TODO: 2. 编译对应的文件
+        String compileCmd = String.format(FileConstant.COMPILE_COMMAND, finalFile.getAbsoluteFile());
+
+        try {
+            // ProcessBuilder.start() 和 Runtime.exec 方法创建一个本机进程，并返回 Process 子类的一个实例，该实例可用来控制进程并获取相关信息。
+            Process compileProcess = Runtime.getRuntime().exec(compileCmd);
+            int compileResult = compileProcess.waitFor();
+
+
+            // 进程
+            if (compileResult == 0) {
+                log.info("编译成功 ");
+                StringBuilder successLog = new StringBuilder();
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(compileProcess.getInputStream()));
+
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    successLog.append(line).append("\n");
+                    System.out.println(line);
+                }
+
+                if (StrUtil.isNotEmpty(successLog)) {
+                    log.error("成功日志  {}", successLog);
+                }
+            } else {
+                log.error("编译失败 ");
+                StringBuilder errorLog = new StringBuilder();
+                BufferedReader errorBufferedReader = new BufferedReader(new InputStreamReader(compileProcess.getErrorStream()));
+
+                String line;
+                while ((line = errorBufferedReader.readLine()) != null) {
+                    errorLog.append(line).append("\n");
+                    System.out.println(line);
+                }
+                log.error("错误日志  {}", errorLog);
+            }
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        return null;
+    }
 
 
     public static void main(String[] args) {
@@ -123,6 +129,7 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 
     /**
      * 获取测试代码，用于方便调试
+     *
      * @return 返回
      */
     private static String getTestCode() {

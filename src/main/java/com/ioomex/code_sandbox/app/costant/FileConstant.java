@@ -11,12 +11,15 @@ public interface FileConstant {
     // 获取用户的根目录
     String ENV = "user.dir";
 
-    // 代码文件夹
+    // 每个用户的代码文件夹
     String CODE = "code";
 
     String MAIN_FILE_NAME = "Main.java";
 
 
-    String COMPILE_COMMAND="javac -encoding utf-8 %s";
+    String COMPILE_COMMAND = "javac -encoding utf-8 %s";
+
+    String RUN_COMMAND = "";
+
 
 }
