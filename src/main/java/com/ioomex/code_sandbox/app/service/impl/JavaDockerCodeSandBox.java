@@ -126,18 +126,16 @@ public class JavaDockerCodeSandBox implements CodeSandbox {
             String containerInterId = DockerUtil.createContainerInter(MagicConstant.DOCKER_JAVA_IMAGE, String.valueOf(UUID.randomUUID()), userCodePath);
 
             DockerUtil.logContainerLogs(containerInterId);
-            // 启动容器
-            DockerUtil.startContainer(containerInterId);
-            DockerUtil.logContainerLogs(containerInterId);
 
             // 根据参数去循环
             List<String> inputList = executeCodeRequest.getInputList();
             if (CollUtil.isNotEmpty(inputList)) {
-
+                long containerMemoryUsage = DockerUtil.getContainerMemoryUsage(containerInterId);
+                log.info("containerMemoryUsage ",containerMemoryUsage);
                 inputList.forEach(item -> {
                     String[] args = item.split(" ");
 
-                    String[] command = ArrayUtil.append(new String[]{"java", "-cp", "/opt/app", "Main", "1", "3"}, args);
+                    String[] command = ArrayUtil.append(new String[]{"java", "-cp", "/opt/app", "Main"}, args);
 
                     log.info("创建命令 {}", Arrays.toString(command));
                     // 执行命令
@@ -148,8 +146,7 @@ public class JavaDockerCodeSandBox implements CodeSandbox {
                     }
                 });
             }
-
-
+            DockerUtil.logContainerLogs(containerInterId);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt(); // 恢复中断状态
             log.error("操作被中断: {}", e.getMessage(), e);
@@ -195,7 +192,7 @@ public class JavaDockerCodeSandBox implements CodeSandbox {
      * @return 返回
      */
     private static String getTestCode() {
-        return ResourceUtil.readStr("code/runTimeError/ReadFile.java", StandardCharsets.UTF_8);
+        return ResourceUtil.readStr("code/Main.java", StandardCharsets.UTF_8);
     }
 
     private ExecuteCodeResponse getResponse(Throwable a) {

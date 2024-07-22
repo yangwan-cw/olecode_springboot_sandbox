@@ -10,6 +10,7 @@ import com.ioomex.code_sandbox.app.costant.MagicConstant;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -55,6 +56,54 @@ public class DockerUtil {
     }
 
     /**
+     * 获取容器的内存使用情况
+     *
+     * @param containerId 容器ID
+     * @return 内存使用情况（以字节为单位），或返回-1表示出错
+     */
+    public static long getContainerMemoryUsage(String containerId) {
+        final long[] memoryUsage = { -1 }; // 使用数组以便在回调中更新
+
+        try {
+            StatsCmd statsCmd = docker.statsCmd(containerId);
+
+            statsCmd.exec(new ResultCallback<Statistics>() {
+                @Override
+                public void onStart(Closeable closeable) {
+                    log.info("开始获取容器 {} 的内存使用情况", containerId);
+                }
+
+                @Override
+                public void onNext(Statistics statistics) {
+                    if (statistics != null && statistics.getMemoryStats() != null) {
+                        memoryUsage[0] = statistics.getMemoryStats().getUsage();
+                        log.info("容器 {} 当前内存使用情况: {} bytes", containerId, memoryUsage[0]);
+                    }
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    log.error("获取容器内存使用情况时出错: {}", throwable.getMessage(), throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    log.info("获取容器 {} 的内存使用情况完成", containerId);
+                }
+
+                @Override
+                public void close() throws IOException {
+                    log.info("关闭统计命令");
+                }
+            });
+        } catch (Exception e) {
+            log.error("获取容器内存使用情况时出错: {}", e.getMessage(), e);
+        }
+
+        return memoryUsage[0];
+    }
+
+    /**
      * 在容器中执行命令
      *
      * @param containerId 容器ID
@@ -63,36 +112,30 @@ public class DockerUtil {
      */
     public static void executeCommandInContainer(String containerId, String[] command) throws InterruptedException {
         // 创建 Exec 实例
-        ExecCreateCmdResponse execCreateCmdResponse = docker.execCreateCmd(containerId)
-                .withAttachStdout(true)
-                .withAttachStderr(true)
-                .withCmd(command)
-                .exec();
+        ExecCreateCmdResponse execCreateCmdResponse = docker.execCreateCmd(containerId).withAttachStdout(true).withAttachStderr(true).withCmd(command).exec();
 
         // 启动 Exec 实例并读取输出
-        docker.execStartCmd(execCreateCmdResponse.getId())
-                .withDetach(false)
-                .exec(new ExecStartResultCallback() {
-                    @Override
-                    public void onStart(Closeable closeable) {
-                        log.info("开始执行命令...");
-                    }
+        docker.execStartCmd(execCreateCmdResponse.getId()).withDetach(false).exec(new ExecStartResultCallback() {
+            @Override
+            public void onStart(Closeable closeable) {
+                log.info("开始执行命令...");
+            }
 
-                    @Override
-                    public void onNext(Frame frame) {
-                        log.info("输出: {}", new String(frame.getPayload(), StandardCharsets.UTF_8));
-                    }
+            @Override
+            public void onNext(Frame frame) {
+                log.info("输出: {}", new String(frame.getPayload(), StandardCharsets.UTF_8));
+            }
 
-                    @Override
-                    public void onError(Throwable throwable) {
-                        log.error("执行命令时发生错误: {}", throwable.getMessage(), throwable);
-                    }
+            @Override
+            public void onError(Throwable throwable) {
+                log.error("执行命令时发生错误: {}", throwable.getMessage(), throwable);
+            }
 
-                    @Override
-                    public void onComplete() {
-                        log.info("命令执行完毕");
-                    }
-                }).awaitCompletion();
+            @Override
+            public void onComplete() {
+                log.info("命令执行完毕");
+            }
+        }).awaitCompletion();
     }
 
     /**
@@ -232,15 +275,11 @@ public class DockerUtil {
         hostConfig.withMemory(100 * 1000 * 1000L);
 
 
-        String containerId = createContainerCmd
-                .withName(containerName)
-                .withHostConfig(hostConfig)
-                .withTty(true)                  // 开启伪终端
+        String containerId = createContainerCmd.withName(containerName).withHostConfig(hostConfig).withTty(true)                  // 开启伪终端
                 .withAttachStdin(true)          // 附加标准输入
                 .withAttachStdout(true)         // 附加标准输出
                 .withAttachStderr(true)         // 附加标准错误
-                .exec()
-                .getId();
+                .exec().getId();
 
 
         log.info("交互式容器 {} 创建成功", containerId);
