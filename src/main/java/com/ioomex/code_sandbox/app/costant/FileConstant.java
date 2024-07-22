@@ -19,7 +19,7 @@ public interface FileConstant {
 
     String COMPILE_COMMAND = "javac -encoding utf-8 %s";
 
-    String RUN_COMMAND = "java -Dfile.encoding=UTF-8 -cp %s Main %s";
+    String RUN_COMMAND = "java -Xmx256m -Dfile.encoding=UTF-8 -cp %s Main %s";
 
 
 }
