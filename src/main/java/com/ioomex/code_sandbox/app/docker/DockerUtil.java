@@ -112,10 +112,14 @@ public class DockerUtil {
      */
     public static void executeCommandInContainer(String containerId, String[] command) throws InterruptedException {
         // 创建 Exec 实例
-        ExecCreateCmdResponse execCreateCmdResponse = docker.execCreateCmd(containerId).withAttachStdout(true).withAttachStderr(true).withCmd(command).exec();
+        ExecCreateCmdResponse execCreateCmdResponse = docker.execCreateCmd(containerId)
+                .withAttachStdout(true)
+                .withAttachStderr(true)
+                .withCmd(command).exec();
 
         // 启动 Exec 实例并读取输出
-        docker.execStartCmd(execCreateCmdResponse.getId()).withDetach(false).exec(new ExecStartResultCallback() {
+        docker.execStartCmd(execCreateCmdResponse.getId())
+                .withDetach(false).exec(new ExecStartResultCallback() {
             @Override
             public void onStart(Closeable closeable) {
                 log.info("开始执行命令...");
