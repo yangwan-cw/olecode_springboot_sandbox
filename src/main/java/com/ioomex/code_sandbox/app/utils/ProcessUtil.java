@@ -36,7 +36,7 @@ public class ProcessUtil {
             } else {
                 log.error("{} 失败", runOrCompileName);
                 String errorLog = readStream(process.getErrorStream());
-                processResult.setMessage(errorLog);
+                processResult.setErrorMessage(errorLog);
             }
             stopWatch.stop();
             processResult.setTime(stopWatch.getLastTaskTimeMillis());

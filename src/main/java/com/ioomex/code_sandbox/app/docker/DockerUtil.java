@@ -48,12 +48,39 @@ public class DockerUtil {
         } else {
             log.info("容器 {} 已存在，无需创建。", containerName);
         }
-
-
-        // 停止并删除容器
-//        deleteContainer(containerName);
-
     }
+
+
+    /**
+     * 根据容器 ID 获取容器名
+     *
+     * @param containerId 容器 ID
+     * @return 容器名
+     */
+    public static String getContainerNameById(String containerId) {
+        InspectContainerResponse containerResponse = docker.inspectContainerCmd(containerId).exec();
+        return containerResponse.getName().replace("/", ""); // Docker 返回的名称会以 '/' 开头
+    }
+
+    /**
+     * 根据容器名获取容器 ID
+     *
+     * @param containerName 容器名
+     * @return 容器 ID
+     */
+    public static String getContainerIdByName(String containerName) {
+        List<Container> containers = docker.listContainersCmd().withShowAll(true).exec();
+        for (Container container : containers) {
+            for (String name : container.getNames()) {
+                if (name.equals("/" + containerName)) {
+                    return container.getId();
+                }
+            }
+        }
+        throw new IllegalArgumentException("找不到容器名: " + containerName);
+    }
+
+
 
     /**
      * 获取容器的内存使用情况
@@ -126,7 +153,13 @@ public class DockerUtil {
 
             @Override
             public void onNext(Frame frame) {
-                log.info("输出: {}", new String(frame.getPayload(), StandardCharsets.UTF_8));
+                StreamType streamType = frame.getStreamType();
+
+                if (StreamType.STDERR.equals(streamType)) {
+                    System.out.println("错误输出: " + new String(frame.getPayload()));
+                } else {
+                    System.out.println("输出结果: " + new String(frame.getPayload()));
+                }
                 super.onNext(frame);
             }
         }).awaitCompletion();

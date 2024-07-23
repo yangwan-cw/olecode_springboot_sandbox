@@ -200,7 +200,7 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
      * @return 返回
      */
     private static String getTestCode() {
-        return ResourceUtil.readStr("code/runTimeError/ReadFile.java", StandardCharsets.UTF_8);
+        return ResourceUtil.readStr("code/Main.java", StandardCharsets.UTF_8);
     }
 
     private ExecuteCodeResponse getResponse(Throwable a) {

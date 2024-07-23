@@ -16,4 +16,6 @@ public interface MagicConstant {
 
 
     String DOCKER_DOC_FILENAME = "/app";
+
+    String DOCKER_JAVA_CODESANDBOX="docker_java_codesandbox";
 }
