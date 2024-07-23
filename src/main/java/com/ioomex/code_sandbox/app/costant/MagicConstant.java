@@ -10,7 +10,10 @@ public interface MagicConstant {
     Long TIME_OUT = 5000L;
 
 
-    String DOCKER_JAVA_IMAGE="openjdk:8-alpine";
+    String DOCKER_JAVA8_IMAGE = "openjdk:8-alpine";
 
-    String DOCKER_DOC_FILENAME="/app";
+    String DOCKER_JAVA11_IMAGE = "openjdk:11";
+
+
+    String DOCKER_DOC_FILENAME = "/app";
 }

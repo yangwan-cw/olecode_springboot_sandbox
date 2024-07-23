@@ -111,31 +111,36 @@ public class JavaDockerCodeSandBox implements CodeSandbox {
         // TODO: 3. 运行对应的文件
         try {
             // 检查镜像是否存在
-            boolean imageExists = DockerUtil.isImageExists(MagicConstant.DOCKER_JAVA_IMAGE);
+            boolean imageExists = DockerUtil.isImageExists(MagicConstant.DOCKER_JAVA11_IMAGE);
 
+            // 如果镜像不存在,那么拉取镜像，反之
             if (!imageExists) {
                 // 镜像不存在，拉取镜像
-                log.info("镜像 {} 不存在，开始拉取...", MagicConstant.DOCKER_JAVA_IMAGE);
-                DockerUtil.pullImage(MagicConstant.DOCKER_JAVA_IMAGE);
-                log.info("镜像 {} 拉取成功", MagicConstant.DOCKER_JAVA_IMAGE);
+                log.info("镜像 {} 不存在，开始拉取...", MagicConstant.DOCKER_JAVA11_IMAGE);
+                DockerUtil.pullImage(MagicConstant.DOCKER_JAVA11_IMAGE);
+                log.info("镜像 {} 拉取成功", MagicConstant.DOCKER_JAVA11_IMAGE);
             } else {
-                log.info("镜像 {} 已存在，无需拉取。", MagicConstant.DOCKER_JAVA_IMAGE);
+                log.info("镜像 {} 已存在，无需拉取。", MagicConstant.DOCKER_JAVA11_IMAGE);
             }
 
             // 根据容器名创建容器
-            String containerInterId = DockerUtil.createContainerInter(MagicConstant.DOCKER_JAVA_IMAGE, String.valueOf(UUID.randomUUID()), userCodePath);
+            String containerInterId = DockerUtil.createContainerInter(MagicConstant.DOCKER_JAVA11_IMAGE, String.valueOf(UUID.randomUUID()), userCodePath);
 
-            DockerUtil.logContainerLogs(containerInterId);
+
+
+            DockerUtil.startContainer(containerInterId);
+
+
+            DockerUtil.logContainerSync(containerInterId);
 
             // 根据参数去循环
             List<String> inputList = executeCodeRequest.getInputList();
+
             if (CollUtil.isNotEmpty(inputList)) {
-                long containerMemoryUsage = DockerUtil.getContainerMemoryUsage(containerInterId);
-                log.info("containerMemoryUsage ",containerMemoryUsage);
                 inputList.forEach(item -> {
                     String[] args = item.split(" ");
 
-                    String[] command = ArrayUtil.append(new String[]{"java", "-cp", "/opt/app", "Main"}, args);
+                    String[] command = ArrayUtil.append(new String[]{"java", "-cp", "/app", "Main"}, args);
 
                     log.info("创建命令 {}", Arrays.toString(command));
                     // 执行命令
@@ -146,9 +151,8 @@ public class JavaDockerCodeSandBox implements CodeSandbox {
                     }
                 });
             }
-            DockerUtil.logContainerLogs(containerInterId);
+
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt(); // 恢复中断状态
             log.error("操作被中断: {}", e.getMessage(), e);
         } catch (Exception e) {
             log.error("执行过程中发生错误: {}", e.getMessage(), e);

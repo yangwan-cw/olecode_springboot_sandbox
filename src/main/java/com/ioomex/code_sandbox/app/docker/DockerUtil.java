@@ -62,7 +62,7 @@ public class DockerUtil {
      * @return 内存使用情况（以字节为单位），或返回-1表示出错
      */
     public static long getContainerMemoryUsage(String containerId) {
-        final long[] memoryUsage = { -1 }; // 使用数组以便在回调中更新
+        final long[] memoryUsage = {-1}; // 使用数组以便在回调中更新
 
         try {
             StatsCmd statsCmd = docker.statsCmd(containerId);
@@ -112,32 +112,22 @@ public class DockerUtil {
      */
     public static void executeCommandInContainer(String containerId, String[] command) throws InterruptedException {
         // 创建 Exec 实例
-        ExecCreateCmdResponse execCreateCmdResponse = docker.execCreateCmd(containerId)
-                .withAttachStdout(true)
+        ExecCreateCmdResponse execCreateCmdResponse = docker
+                .execCreateCmd(containerId)
                 .withAttachStderr(true)
-                .withCmd(command).exec();
+                .withAttachStdin(true)
+                .withAttachStdout(true)
+                .withCmd(command)
+                .exec();
 
         // 启动 Exec 实例并读取输出
         docker.execStartCmd(execCreateCmdResponse.getId())
-                .withDetach(false).exec(new ExecStartResultCallback() {
-            @Override
-            public void onStart(Closeable closeable) {
-                log.info("开始执行命令...");
-            }
+                .exec(new ExecStartResultCallback() {
 
             @Override
             public void onNext(Frame frame) {
                 log.info("输出: {}", new String(frame.getPayload(), StandardCharsets.UTF_8));
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                log.error("执行命令时发生错误: {}", throwable.getMessage(), throwable);
-            }
-
-            @Override
-            public void onComplete() {
-                log.info("命令执行完毕");
+                super.onNext(frame);
             }
         }).awaitCompletion();
     }
@@ -186,6 +176,25 @@ public class DockerUtil {
         } catch (InterruptedException e) {
             log.error("获取容器日志时出错: {}", e.getMessage(), e);
         }
+    }
+
+    public static void logContainerSync(String containerId){
+        new Thread(() -> {
+            try {
+                docker.logContainerCmd(containerId)
+                        .withStdOut(true)
+                        .withStdErr(true)
+                        .withFollowStream(true)
+                        .exec(new ResultCallback.Adapter<Frame>() {
+                            @Override
+                            public void onNext(Frame frame) {
+                                log.info("容器日志: {}", new String(frame.getPayload(), StandardCharsets.UTF_8));
+                            }
+                        }).awaitCompletion();
+            } catch (Exception e) {
+                log.error("读取容器日志时发生错误: {}", e.getMessage(), e);
+            }
+        }).start();
     }
 
 
@@ -279,11 +288,15 @@ public class DockerUtil {
         hostConfig.withMemory(100 * 1000 * 1000L);
 
 
-        String containerId = createContainerCmd.withName(containerName).withHostConfig(hostConfig).withTty(true)                  // 开启伪终端
+        String containerId = createContainerCmd.withName(containerName)
+                .withHostConfig(hostConfig)
                 .withAttachStdin(true)          // 附加标准输入
                 .withAttachStdout(true)         // 附加标准输出
                 .withAttachStderr(true)         // 附加标准错误
-                .exec().getId();
+                .withCmd("/bin/sh")            // 使用 /bin/sh 作为启动命令
+                .withTty(true)  // 开启伪终端
+                .exec()
+                .getId();
 
 
         log.info("交互式容器 {} 创建成功", containerId);
