@@ -1,6 +1,7 @@
 package com.ioomex.code_sandbox.app.model.po;
 
 import lombok.Data;
+import lombok.ToString;
 
 /**
  * 判题信息
@@ -9,6 +10,7 @@ import lombok.Data;
  * @from <a href="https://github.com/yangwan-cw">yangwan-cw仓库</a>
  */
 @Data
+@ToString
 public class JudgeInfo {
 
     /**

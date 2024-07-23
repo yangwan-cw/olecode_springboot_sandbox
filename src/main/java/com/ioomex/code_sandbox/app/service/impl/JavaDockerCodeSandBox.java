@@ -24,6 +24,7 @@ import com.ioomex.code_sandbox.app.model.po.ProcessResult;
 import com.ioomex.code_sandbox.app.sercurity.DefaultSecurityManager;
 import com.ioomex.code_sandbox.app.service.CodeSandbox;
 import com.ioomex.code_sandbox.app.utils.ProcessUtil;
+import com.ioomex.code_sandbox.app.utils.StatusUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -180,17 +181,8 @@ public class JavaDockerCodeSandBox implements CodeSandbox {
                             final String[] message = {null};
                             final String[] errorMessage = {null};
                             long time = 0L;
-                            // 判断是否超时
-                            final boolean[] timeout = {true};
                             String execId = execCreateCmdResponse.getId();
                             ExecStartResultCallback execStartResultCallback = new ExecStartResultCallback() {
-                                @Override
-                                public void onComplete() {
-                                    // 如果执行完成，则表示没超时
-                                    timeout[0] = false;
-                                    super.onComplete();
-                                }
-
                                 @Override
                                 public void onNext(Frame frame) {
                                     StreamType streamType = frame.getStreamType();
@@ -273,6 +265,7 @@ public class JavaDockerCodeSandBox implements CodeSandbox {
                         executeCodeResponse.setMessage(errorMessage);
                         // 用户提交的代码执行中存在错误
                         executeCodeResponse.setStatus(3);
+                        executeCodeResponse.setStatusStr(StatusUtil.getStatusStr(3));
                         break;
                     }
                     outputList.add(executeMessage.getMessage());
@@ -283,7 +276,8 @@ public class JavaDockerCodeSandBox implements CodeSandbox {
                 }
                 // 正常运行完成
                 if (outputList.size() == processResults.size()) {
-                    executeCodeResponse.setStatus(1);
+                    executeCodeResponse.setStatus(2);
+                    executeCodeResponse.setStatusStr(StatusUtil.getStatusStr(2));
                 }
                 executeCodeResponse.setOutputList(outputList);
                 JudgeInfo judgeInfo = new JudgeInfo();
@@ -304,6 +298,7 @@ public class JavaDockerCodeSandBox implements CodeSandbox {
         if (finalFile.getParentFile() != null) {
             delTemporarilyFile(fileName);
         }
+        log.info("executeCodeResponse {}",executeCodeResponse);
         return executeCodeResponse;
     }
 

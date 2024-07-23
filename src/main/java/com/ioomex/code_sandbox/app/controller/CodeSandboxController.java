@@ -16,7 +16,14 @@
 
 package com.ioomex.code_sandbox.app.controller;
 
+import com.ioomex.code_sandbox.app.model.po.ExecuteCodeRequest;
+import com.ioomex.code_sandbox.app.model.po.ExecuteCodeResponse;
+import com.ioomex.code_sandbox.app.service.CodeSandbox;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
+
+import javax.annotation.Resource;
 
 /**
  * @author <a href="mailto:chenxilzx1@gmail.com">theonefx</a>
@@ -25,12 +32,16 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/code")
 public class CodeSandboxController {
 
+    @Resource
+    private CodeSandbox codeSandbox;
+
     // http://127.0.0.1:8080/hello?name=lisi
     // 测试
-    @RequestMapping("/hello")
+    @RequestMapping("/execute")
     @ResponseBody
-    public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
-        return "Hello " + name;
+    public ExecuteCodeResponse codeSandbox(@RequestBody ExecuteCodeRequest executeCodeRequest) {
+        ExecuteCodeResponse response = codeSandbox.executeCode(executeCodeRequest);
+        return response;
     }
 
 }

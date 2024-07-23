@@ -3,8 +3,6 @@ package com.ioomex.code_sandbox.app.service.impl;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.dfa.FoundWord;
-import cn.hutool.dfa.WordTree;
 import com.ioomex.code_sandbox.app.costant.FileConstant;
 import com.ioomex.code_sandbox.app.costant.MagicConstant;
 import com.ioomex.code_sandbox.app.model.po.ExecuteCodeRequest;
@@ -14,8 +12,8 @@ import com.ioomex.code_sandbox.app.model.po.ProcessResult;
 import com.ioomex.code_sandbox.app.sercurity.DefaultSecurityManager;
 import com.ioomex.code_sandbox.app.service.CodeSandbox;
 import com.ioomex.code_sandbox.app.utils.ProcessUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.ioomex.code_sandbox.app.utils.StatusUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -27,9 +25,10 @@ import java.util.UUID;
 
 
 @Service
+@Slf4j
 public class JavaNativeCodeSandBox implements CodeSandbox {
 
-    private static final Logger log = LoggerFactory.getLogger(JavaNativeCodeSandBox.class);
+
 
     static {
         file();
@@ -58,7 +57,6 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 
     private static void runResult(ProcessResult result) {
         log.info("运行结果  {}", result.getMessage());
-        ;
     }
 
 
@@ -77,18 +75,8 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 
     @Override
     public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
-//        System.setSecurityManager(new DefaultSecurityManager());
+        System.setSecurityManager(new DefaultSecurityManager());
         ExecuteCodeResponse executeCodeResponse = new ExecuteCodeResponse();
-//        // 校验用户的code是否存在违规操作
-//        String code = executeCodeRequest.getCode();
-//
-//        WordTree wordTree = new WordTree();
-//        wordTree.addWord("File");
-//        FoundWord foundWord = wordTree.matchWord(code);
-//        if (foundWord != null) {
-//            System.out.printf(foundWord.getFoundWord());
-//            return null;
-//        }
         // 代码路径
         String codePath = getCodePath();
 
@@ -111,12 +99,12 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 
 
         Long maxTime = 0L;
-        // TODO: 3. 运行对应的文件
         try {
-            List<String> inputList = executeCodeRequest.getInputList();
 
-            for (String s : inputList) {
-                String finalRunCmd = String.format(FileConstant.RUN_COMMAND, userCodePath, s);
+            List<String> inputList = executeCodeRequest.getInputList();
+            // 测试用例
+            for (String testCase : inputList) {
+                String finalRunCmd = String.format(FileConstant.RUN_COMMAND, userCodePath, testCase);
                 Process runProcess = Runtime.getRuntime().exec(finalRunCmd);
                 ProcessResult processResult = ProcessUtil.processRunOrCompile(runProcess, MagicConstant.RUN);
                 runResult(processResult);
@@ -128,12 +116,16 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 
         }
 
+
+
+        // 拼装结果
         List<String> outputList = new ArrayList<>();
         for (ProcessResult processResult : processResults) {
             String errorMessage = processResult.getErrorMessage();
             if (StrUtil.isNotEmpty(errorMessage)) {
                 executeCodeResponse.setMessage(errorMessage);
                 executeCodeResponse.setStatus(3);
+                executeCodeResponse.setStatusStr(StatusUtil.getStatusStr(3));
                 break;
             }
             outputList.add(processResult.getMessage());
@@ -144,18 +136,22 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
         }
 
         if (outputList.size() == processResults.size()) {
-            executeCodeResponse.setStatus(1);
+            executeCodeResponse.setStatus(2);
+            executeCodeResponse.setStatusStr(StatusUtil.getStatusStr(2));
         }
         executeCodeResponse.setOutputList(outputList);
         JudgeInfo judgeInfo = new JudgeInfo();
         judgeInfo.setTime(maxTime);
-//        judgeInfo.setMemory();
+        judgeInfo.setMemory(1L);
         executeCodeResponse.setJudgeInfo(judgeInfo);
 
-//        if (finalFile.getParentFile() != null) {
-//            delTemporarilyFile(fileName);
-//        }
 
+        // 文件清理
+        if (finalFile.getParentFile() != null) {
+            delTemporarilyFile(fileName);
+        }
+
+        log.info("executeCodeResponse {}",executeCodeResponse.toString());
         return executeCodeResponse;
     }
 
@@ -171,17 +167,6 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 
         }).start();
     }
-
-
-    public static void main(String[] args) {
-        JavaNativeCodeSandBox javaNativeCodeSandBox = new JavaNativeCodeSandBox();
-        ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
-        executeCodeRequest.setInputList(Arrays.asList("10 2", "3 4"));
-        executeCodeRequest.setCode(getTestCode());
-        executeCodeRequest.setLanguage("java");
-        javaNativeCodeSandBox.executeCode(executeCodeRequest);
-    }
-
 
     /**
      * 获取测试代码，用于方便调试
@@ -200,4 +185,15 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
         executeCodeResponse.setMessage(a.getMessage());
         return executeCodeResponse;
     }
+
+    public static void main(String[] args) {
+        JavaNativeCodeSandBox javaNativeCodeSandBox = new JavaNativeCodeSandBox();
+        ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
+        executeCodeRequest.setInputList(Arrays.asList("10 2", "3 4"));
+        executeCodeRequest.setCode(getTestCode());
+        executeCodeRequest.setLanguage("java");
+        javaNativeCodeSandBox.executeCode(executeCodeRequest);
+    }
+
+
 }
