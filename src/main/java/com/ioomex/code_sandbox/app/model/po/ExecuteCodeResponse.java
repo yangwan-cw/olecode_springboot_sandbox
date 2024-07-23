@@ -16,7 +16,7 @@ public class ExecuteCodeResponse {
     private List<String> outputList;
 
     /**
-     * 接口信息
+     * 接口信息: 是否报错等..
      */
     private String message;
 

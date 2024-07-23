@@ -323,6 +323,8 @@ public class DockerUtil {
 
         String containerId = createContainerCmd.withName(containerName)
                 .withHostConfig(hostConfig)
+                .withReadonlyRootfs(true)
+                .withNetworkDisabled(true)
                 .withAttachStdin(true)          // 附加标准输入
                 .withAttachStdout(true)         // 附加标准输出
                 .withAttachStderr(true)         // 附加标准错误

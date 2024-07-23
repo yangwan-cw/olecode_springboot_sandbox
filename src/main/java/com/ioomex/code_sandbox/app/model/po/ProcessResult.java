@@ -14,4 +14,6 @@ public class ProcessResult {
     private String errorMessage;
 
     private Long time;
+
+    private Long memory;
 }

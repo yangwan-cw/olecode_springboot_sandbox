@@ -77,9 +77,8 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 
     @Override
     public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
-        System.setSecurityManager(new DefaultSecurityManager());
+//        System.setSecurityManager(new DefaultSecurityManager());
         ExecuteCodeResponse executeCodeResponse = new ExecuteCodeResponse();
-
 //        // 校验用户的code是否存在违规操作
 //        String code = executeCodeRequest.getCode();
 //
@@ -90,8 +89,6 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 //            System.out.printf(foundWord.getFoundWord());
 //            return null;
 //        }
-
-
         // 代码路径
         String codePath = getCodePath();
 
@@ -100,25 +97,19 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 
         // 文件名
         String fileName = userCodePath + File.separator + FileConstant.MAIN_FILE_NAME;
-        // TODO: 1. 生成的路径之后，根据用户的代码去将代码写入到文件
         File finalFile = FileUtil.writeString(executeCodeRequest.getCode(), fileName, StandardCharsets.UTF_8);
-
-        // TODO: 2. 编译对应的文件
         try {
             String compileCmd = String.format(FileConstant.COMPILE_COMMAND, finalFile.getAbsoluteFile());
-
             Process compileProcess = Runtime.getRuntime().exec(compileCmd);
-
             ProcessResult processResult = ProcessUtil.processRunOrCompile(compileProcess, MagicConstant.COMPILE);
             runResult(processResult);
         } catch (Exception e) {
             log.error("编译过程中出现异常", e);
             return getResponse(e);
-
         }
-
-
         List<ProcessResult> processResults = new ArrayList<>();
+
+
         Long maxTime = 0L;
         // TODO: 3. 运行对应的文件
         try {
@@ -127,9 +118,7 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
             for (String s : inputList) {
                 String finalRunCmd = String.format(FileConstant.RUN_COMMAND, userCodePath, s);
                 Process runProcess = Runtime.getRuntime().exec(finalRunCmd);
-//                     monitorThread(runProcess);
                 ProcessResult processResult = ProcessUtil.processRunOrCompile(runProcess, MagicConstant.RUN);
-//                ProcessResult processResult = ProcessUtil.runInteractProcessAndGetMessage(runProcess,s);
                 runResult(processResult);
                 processResults.add(processResult);
             }
@@ -147,7 +136,7 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
                 executeCodeResponse.setStatus(3);
                 break;
             }
-            outputList.add(errorMessage);
+            outputList.add(processResult.getMessage());
             Long time = processResult.getTime();
             if (time != null) {
                 maxTime = Math.max(maxTime, time);
@@ -163,9 +152,9 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
 //        judgeInfo.setMemory();
         executeCodeResponse.setJudgeInfo(judgeInfo);
 
-        if (finalFile.getParentFile() != null) {
-            delTemporarilyFile(fileName);
-        }
+//        if (finalFile.getParentFile() != null) {
+//            delTemporarilyFile(fileName);
+//        }
 
         return executeCodeResponse;
     }
