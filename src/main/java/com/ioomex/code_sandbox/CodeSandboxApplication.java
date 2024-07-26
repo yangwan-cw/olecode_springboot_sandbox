@@ -1,8 +1,14 @@
 package com.ioomex.code_sandbox;
 
 import cn.hutool.core.thread.ThreadUtil;
+import com.ioomex.code_sandbox.app.starter.ApplicationRunStarter;
+import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.SpringVersion;
+import org.springframework.core.env.Environment;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -20,11 +26,21 @@ import java.util.List;
 @SpringBootApplication
 public class CodeSandboxApplication {
 
-//    public static void main(String[] args) {
-//        SpringApplication.run(CodeSandboxApplication.class, args);
-//
-//    }
-//
+    public static void main(String[] args) {
+
+        // 创建 SpringApplicationBuilder 对象并进行相关设置
+        SpringApplicationBuilder builder = new SpringApplicationBuilder(CodeSandboxApplication.class)
+                .main(SpringVersion.class)
+                .bannerMode(Banner.Mode.CONSOLE);
+
+        // 运行 Spring 应用
+        ConfigurableApplicationContext run = builder.run(args);
+
+        // 获取环境对象
+        Environment env = run.getEnvironment();
+        ApplicationRunStarter.logApplicationStartup(env);
+    }
+
 
 
 //    public static void main(String[] args) throws IOException, InterruptedException {
@@ -43,37 +59,4 @@ public class CodeSandboxApplication {
 //        System.out.printf("程序执行成功");
 //    }
 
-    public static void main(String[] args) {
-        // 获取堆和非堆内存使用情况
-        MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
-        MemoryUsage heapMemoryUsageBefore = memoryMXBean.getHeapMemoryUsage();
-        MemoryUsage nonHeapMemoryUsageBefore = memoryMXBean.getNonHeapMemoryUsage();
-
-        // 执行用户代码或命令
-        try {
-            String command = "your_command_here"; // 替换为你的运行命令
-            Process process = Runtime.getRuntime().exec(command);
-
-            // 等待命令执行完成
-            int exitCode = process.waitFor();
-
-            // 获取执行后的内存使用情况
-            MemoryUsage heapMemoryUsageAfter = memoryMXBean.getHeapMemoryUsage();
-            MemoryUsage nonHeapMemoryUsageAfter = memoryMXBean.getNonHeapMemoryUsage();
-
-            // 计算内存使用量的差异
-            long heapMemoryUsed = heapMemoryUsageAfter.getUsed() - heapMemoryUsageBefore.getUsed();
-            long nonHeapMemoryUsed = nonHeapMemoryUsageAfter.getUsed() - nonHeapMemoryUsageBefore.getUsed();
-
-            // 打印内存使用情况
-            System.out.println("Heap Memory Used: " + heapMemoryUsed);
-            System.out.println("Non-Heap Memory Used: " + nonHeapMemoryUsed);
-
-            // 处理命令执行结果
-            // ...
-
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
 }

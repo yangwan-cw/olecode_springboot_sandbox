@@ -24,9 +24,8 @@ import java.util.List;
 import java.util.UUID;
 
 
-@Service
 @Slf4j
-public class JavaNativeCodeSandBox implements CodeSandbox {
+public class JavaNativeCodeSandBoxOld implements CodeSandbox {
 
 
 
@@ -187,12 +186,12 @@ public class JavaNativeCodeSandBox implements CodeSandbox {
     }
 
     public static void main(String[] args) {
-        JavaNativeCodeSandBox javaNativeCodeSandBox = new JavaNativeCodeSandBox();
+        JavaNativeCodeSandBoxOld javaNativeCodeSandBoxOld = new JavaNativeCodeSandBoxOld();
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
         executeCodeRequest.setInputList(Arrays.asList("10 2", "3 4"));
         executeCodeRequest.setCode(getTestCode());
         executeCodeRequest.setLanguage("java");
-        javaNativeCodeSandBox.executeCode(executeCodeRequest);
+        javaNativeCodeSandBoxOld.executeCode(executeCodeRequest);
     }
 
 

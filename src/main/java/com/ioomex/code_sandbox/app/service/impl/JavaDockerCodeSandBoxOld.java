@@ -27,10 +27,8 @@ import com.ioomex.code_sandbox.app.utils.ProcessUtil;
 import com.ioomex.code_sandbox.app.utils.StatusUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
-import javax.print.Doc;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -41,10 +39,10 @@ import java.util.List;
 import java.util.UUID;
 
 
-@Service
-public class JavaDockerCodeSandBox implements CodeSandbox {
 
-    private static final Logger log = LoggerFactory.getLogger(JavaDockerCodeSandBox.class);
+public class JavaDockerCodeSandBoxOld implements CodeSandbox {
+
+    private static final Logger log = LoggerFactory.getLogger(JavaDockerCodeSandBoxOld.class);
     public final static DockerClient docker = DockerClientBuilder.getInstance().build();
 
 
@@ -317,7 +315,7 @@ public class JavaDockerCodeSandBox implements CodeSandbox {
 
 
     public static void main(String[] args) {
-        JavaDockerCodeSandBox javaNativeCodeSandBox = new JavaDockerCodeSandBox();
+        JavaDockerCodeSandBoxOld javaNativeCodeSandBox = new JavaDockerCodeSandBoxOld();
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
         executeCodeRequest.setInputList(Arrays.asList("10 2", "3 4"));
         executeCodeRequest.setCode(getTestCode());

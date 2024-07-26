@@ -30,5 +30,10 @@ public class CodeSandboxController {
         ExecuteCodeResponse response = javaNativeCodeSandBox.executeCode(executeCodeRequest);
         return response;
     }
+    @RequestMapping("/hello")
+    @ResponseBody
+    public String hello(@RequestBody ExecuteCodeRequest executeCodeRequest) {
+        return "hello";
+    }
 
 }

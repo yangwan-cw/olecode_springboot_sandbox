@@ -12,7 +12,7 @@ import com.ioomex.code_sandbox.app.model.po.JudgeInfo;
 import com.ioomex.code_sandbox.app.model.po.ProcessResult;
 import com.ioomex.code_sandbox.app.sercurity.DefaultSecurityManager;
 import com.ioomex.code_sandbox.app.service.CodeSandbox;
-import com.ioomex.code_sandbox.app.service.impl.JavaNativeCodeSandBox;
+import com.ioomex.code_sandbox.app.service.impl.JavaNativeCodeSandBoxOld;
 import com.ioomex.code_sandbox.app.utils.ProcessUtil;
 import com.ioomex.code_sandbox.app.utils.StatusUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -213,7 +213,7 @@ public  class AbstractCodeSandBoxTemplate implements CodeSandbox {
     }
 
     public static void main(String[] args) {
-        JavaNativeCodeSandBox javaNativeCodeSandBox = new JavaNativeCodeSandBox();
+        JavaNativeCodeSandBoxOld javaNativeCodeSandBoxOld = new JavaNativeCodeSandBoxOld();
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
         executeCodeRequest.setInputList(Arrays.asList("10 2", "3 4"));
         executeCodeRequest.setCode(getTestCode());
