@@ -37,7 +37,7 @@ public class ProcessUtil {
                 // 逐行读取
                 String compileOutputLine;
                 while ((compileOutputLine = bufferedReader.readLine()) != null) {
-                    compileOutputStringBuilder.append(compileOutputLine).append("\n");
+                    compileOutputStringBuilder.append(compileOutputLine);
                 }
                 processResult.setMessage(compileOutputStringBuilder.toString());
             } else {
@@ -49,7 +49,7 @@ public class ProcessUtil {
                 // 逐行读取
                 String compileOutputLine;
                 while ((compileOutputLine = bufferedReader.readLine()) != null) {
-                    compileOutputStringBuilder.append(compileOutputLine).append("\n");
+                    compileOutputStringBuilder.append(compileOutputLine);
                 }
                 processResult.setMessage(compileOutputStringBuilder.toString());
 
@@ -60,7 +60,7 @@ public class ProcessUtil {
                 // 逐行读取
                 String errorCompileOutputLine;
                 while ((errorCompileOutputLine = errorBufferedReader.readLine()) != null) {
-                    errorCompileOutputStringBuilder.append(errorCompileOutputLine).append("\n");
+                    errorCompileOutputStringBuilder.append(errorCompileOutputLine);
                 }
                 processResult.setErrorMessage(errorCompileOutputStringBuilder.toString());
             }

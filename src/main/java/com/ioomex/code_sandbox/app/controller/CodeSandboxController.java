@@ -2,6 +2,7 @@
 
 package com.ioomex.code_sandbox.app.controller;
 
+import cn.hutool.core.util.ObjUtil;
 import com.ioomex.code_sandbox.app.model.po.ExecuteCodeRequest;
 import com.ioomex.code_sandbox.app.model.po.ExecuteCodeResponse;
 import com.ioomex.code_sandbox.app.model.po.User;
@@ -46,6 +47,10 @@ public class CodeSandboxController {
     public ExecuteCodeResponse nativeCodeSandbox(@RequestBody ExecuteCodeRequest executeCodeRequest, HttpServletRequest httpServletRequest,
                                                  HttpServletResponse httpServletResponse) {
         String head = httpServletRequest.getHeader(AUTH);
+        if(ObjUtil.isEmpty(head)){
+            httpServletResponse.setStatus(401);
+            return null;
+        }
         if (!head.equals(MD5_HASH)) {
             httpServletResponse.setStatus(401);
             return null;
@@ -69,6 +74,10 @@ public class CodeSandboxController {
                                                  HttpServletRequest httpServletRequest,
                                                  HttpServletResponse httpServletResponse) {
         String head = httpServletRequest.getHeader(AUTH);
+        if(ObjUtil.isEmpty(head)){
+            httpServletResponse.setStatus(401);
+            return null;
+        }
         if (!head.equals(MD5_HASH)) {
             httpServletResponse.setStatus(401);
             return null;
